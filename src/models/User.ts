@@ -1,6 +1,8 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface IUser extends Document {
+  email: string;
+  password?: string;
   name: string;
   weight?: number;
   daysPerWeek: number;
@@ -15,6 +17,8 @@ export interface IUser extends Document {
 }
 
 const UserSchema: Schema = new Schema({
+  email: { type: String, required: true, unique: true },
+  password: { type: String }, // Optional for potential OAuth, required for manual signup
   name: { type: String, required: true },
   weight: { type: Number },
   daysPerWeek: { type: Number, required: true, enum: [3, 4, 5, 6] },

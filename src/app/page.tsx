@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import ProfileSetup from "@/components/setup/ProfileSetup";
 import Dashboard from "@/components/dashboard/Dashboard";
 import DailyLog from "@/components/log/DailyLog";
 import HistoryTab from "@/components/history/History";
 import WeightTracker from "@/components/weight/WeightTracker";
-import { BarChart2, Dumbbell, Clock, Zap, Scale } from "lucide-react";
+import { BarChart2, Dumbbell, Clock, Zap, Scale, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 type Tab = "dashboard" | "log" | "history" | "weight";
 
@@ -16,14 +16,23 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [currentTab, setCurrentTab] = useState<Tab>("dashboard");
   const [refreshKey, setRefreshKey] = useState(0);
+  const router = useRouter();
 
   const fetchUser = async () => {
     try {
       const res = await fetch("/api/user");
+      if (!res.ok) {
+        throw new Error("unauthorized");
+      }
       const data = await res.json();
-      if (data.user) setUser(data.user);
+      if (data.user) {
+        setUser(data.user);
+      } else {
+        router.push("/login");
+      }
     } catch (err) {
       console.error(err);
+      router.push("/login");
     } finally {
       setLoading(false);
     }
@@ -34,6 +43,15 @@ export default function Home() {
   const handleSessionLogged = () => {
     setRefreshKey((prev) => prev + 1);
     setCurrentTab("dashboard");
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.push("/login");
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
   };
 
   if (loading) {
@@ -47,7 +65,7 @@ export default function Home() {
     );
   }
 
-  if (!user) return <ProfileSetup onComplete={fetchUser} />;
+  if (!user) return null;
 
   const navItems = [
     { id: "history" as Tab, label: "Log", icon: Clock },
@@ -65,9 +83,14 @@ export default function Home() {
       <header className="sticky top-0 z-30 bg-[var(--bg-dark)]/90 backdrop-blur-md border-b border-white/5 px-4 py-3">
         <div className="flex items-center justify-between">
           <h1 className="cinzel text-xl font-black text-[var(--xp-gold)] tracking-widest">GymQuest</h1>
-          <div className="flex items-center gap-1.5 text-[var(--text-muted)] text-xs">
-            <Zap className="w-3.5 h-3.5 text-[var(--xp-gold)]" />
-            <span className="font-mono text-[var(--xp-gold)] font-bold">{user.xp} XP</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 text-[var(--text-muted)] text-xs">
+              <Zap className="w-3.5 h-3.5 text-[var(--xp-gold)]" />
+              <span className="font-mono text-[var(--xp-gold)] font-bold">{user.xp} XP</span>
+            </div>
+            <button onClick={handleLogout} className="text-[var(--text-muted)] hover:text-white transition-colors">
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </header>

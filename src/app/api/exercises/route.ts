@@ -2,15 +2,21 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongoose";
 import ExerciseLog from "@/models/ExerciseLog";
 import User from "@/models/User";
+import { getAuthSession } from "@/lib/auth";
 
 export async function GET(request: Request) {
   try {
+    const sessionAuth = await getAuthSession();
+    if (!sessionAuth || !sessionAuth.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get("sessionId");
     const library = searchParams.get("library");
 
     await dbConnect();
-    const user = await User.findOne();
+    const user = await User.findById(sessionAuth.userId);
     if (!user)
       return NextResponse.json({ error: "User not found" }, { status: 404 });
 
@@ -62,11 +68,16 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const sessionAuth = await getAuthSession();
+    if (!sessionAuth || !sessionAuth.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
     // body: { sessionId, exercises: [{ name, muscleGroup, sets: [{reps, weightKg}] }] }
     await dbConnect();
 
-    const user = await User.findOne();
+    const user = await User.findById(sessionAuth.userId);
     if (!user)
       return NextResponse.json({ error: "User not found" }, { status: 404 });
 

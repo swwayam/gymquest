@@ -2,11 +2,17 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongoose";
 import WeightLog from "@/models/WeightLog";
 import User from "@/models/User";
+import { getAuthSession } from "@/lib/auth";
 
 export async function GET() {
   try {
+    const sessionAuth = await getAuthSession();
+    if (!sessionAuth || !sessionAuth.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     await dbConnect();
-    const user = await User.findOne();
+    const user = await User.findById(sessionAuth.userId);
     if (!user)
       return NextResponse.json({ error: "User not found" }, { status: 404 });
 
@@ -22,10 +28,15 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const sessionAuth = await getAuthSession();
+    if (!sessionAuth || !sessionAuth.userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
     await dbConnect();
 
-    const user = await User.findOne();
+    const user = await User.findById(sessionAuth.userId);
     if (!user)
       return NextResponse.json({ error: "User not found" }, { status: 404 });
 
