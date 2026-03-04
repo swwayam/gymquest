@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     });
 
     // Generate JWT and set cookie
-    const token = await signToken({ userId: user._id });
+    const token = await signToken({ userId: user._id.toString() });
     await setAuthCookie(token);
 
     // Remove password from response
